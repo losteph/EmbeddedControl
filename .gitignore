@@ -1,0 +1,27 @@
+# Cartelle di compilazione (fondamentali)
+Debug/
+Release/
+
+# File di cache locale specifici di Eclipse/CubeIDE (da NON caricare)
+.metadata/
+.settings/language.settings.xml
+*.launch
+
+# Prerequisites & Debug
+*.d
+*.su
+*.idb
+*.pdb
+
+# File oggetto e binari compilati
+*.o
+*.ko
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# File temporanei
+*~
