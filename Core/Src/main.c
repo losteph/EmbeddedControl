@@ -2,7 +2,7 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Main program body
+  * @brief          : Progetto Levitating Ball
   ******************************************************************************
   * @attention
   *
@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define PRINT_PRESCALER 10  // Stampa ogni 10 cicli da 20ms = 200ms (5 Hz)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -40,23 +40,37 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart2;
+TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
+/* --- FLAG DI SINCRONIZZAZIONE (volatile perché modificate/lette tra ISR e main) --- */
+volatile uint8_t task_50hz = 0;   // Alzata a 1 ogni 20ms dall'interrupt di TIM6
+uint8_t print_flag = 0;           // Alzata a 1 ogni 10 cicli (200ms) per la telemetria
+uint16_t print_counter = 0;       // Contatore secondario per rallentare le stampe
 
+/*--- VARIABILI USILIARIE PER TEST --- */
+uint16_t timer_seconds_count = 0; // Contatore per scandire i 5 secondi
+uint32_t elapsed_seconds = 0;     // Tempo totale trascorso in secondi
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
+static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
-
+void Read_Sensors(void);
+void Compute_PID(void);
+void Update_Actuators(void);
+void Print_Telemetry(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+// Reindirizzamento di printf per funzionare sia su SWV/ITM sia su UART
+int __io_putchar(int ch) {
+    ITM_SendChar(ch);
+    return ch;
+}
 /* USER CODE END 0 */
 
 /**
@@ -88,15 +102,30 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+  /* --- 1. INIZIALIZZAZIONE E AVVIO SERVIZI (Prima del while) --- */
 
+    // Qui inseriremo l'init del sensore VL53L1X (I2C) e l'avvio del PWM ventola
+
+    // Avvio del Timer 6 in modalità Interrupt (scatta ogni 20 ms = 50 Hz)
+    HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  /* Controllo ad anello chiuso a 50 Hz */
+	  if (task_50hz == 1)
+	      {
+	          task_50hz = 0; // Reset immediato della flag
+
+	          Read_Sensors();
+	          Compute_PID();
+	          Update_Actuators();
+
+	      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -152,35 +181,40 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
+  * @brief TIM6 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART2_UART_Init(void)
+static void MX_TIM6_Init(void)
 {
 
-  /* USER CODE BEGIN USART2_Init 0 */
+  /* USER CODE BEGIN TIM6_Init 0 */
 
-  /* USER CODE END USART2_Init 0 */
+  /* USER CODE END TIM6_Init 0 */
 
-  /* USER CODE BEGIN USART2_Init 1 */
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 8399;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 199;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART2_Init 2 */
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
 
-  /* USER CODE END USART2_Init 2 */
+  /* USER CODE END TIM6_Init 2 */
 
 }
 
@@ -191,32 +225,14 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -224,7 +240,49 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/* ============================================================================
+ * 1. IMPLEMENTAZIONE DELLE FUNZIONI DELLO SCHELETRO (Per ora vuote/di test)
+ * ============================================================================ */
 
+void Read_Sensors(void)
+{
+    // TODO: Qui leggeremo la distanza da VL53L1X via I2C (e eventuale potenziometro)
+}
+
+void Compute_PID(void)
+{
+    // TODO: Qui chiameremo PID_Update() per calcolare control_pwm
+}
+
+void Update_Actuators(void)
+{
+    // TODO: Qui aggiorneremo il registro CCR del PWM ventola e i 2 LED (Verde/Rosso)
+}
+
+/* ============================================================================
+ * 2. ROUTINE DI GESTIONE DEGLI INTERRUPT (ISR Callbacks - Brevissime!)
+ * ============================================================================ */
+
+/**
+  * @brief  Callback del Timer a 50 Hz (scatta esattamente ogni 20 ms).
+  *
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    if (htim->Instance == TIM6)
+    {
+        task_50hz = 1;
+    }
+}
+
+/**
+  * @brief  Callback per gli Interrupt Esterni (Pulsanti fisici per il Setpoint).
+  *         Isola l'input utente asincrono dalla logica di controllo.
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    // TODO: Qui inseriremo l'incremento/decremento di setpoint_mm con debouncing
+}
 /* USER CODE END 4 */
 
 /**
@@ -241,8 +299,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
