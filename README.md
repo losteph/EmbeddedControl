@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Levitating Ball 
 
 Il sistema realizza il controllo ad anello chiuso per stabilizzare e regolare la quota di levitazione di una pallina all'interno di un tubo trasparente. 
@@ -72,4 +71,4 @@ La spinta verticale è modulata tramite una ventola a 12V pilotata in PWM, mentr
 
 * `Core/Src/` e `Core/Inc/`: Codice sorgente firmware (controllore `pid.c`, driver sensore `vl53l1x_user.c`, gestione pulsanti `buttons.c` e `main.c`).
 * `EmbeddedControl.ioc`: File di configurazione hardware per STM32CubeMX.
->>>>>>> 6d02b2f947a938df065d5bc82a9d79961d06d4d1
+
