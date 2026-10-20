@@ -147,15 +147,12 @@ int main(void)
 	        	  timer_seconds_count = 0;
 	        	  elapsed_seconds += 5;
 
-	        	  // Inverte lo stato del LED LD2 ogni 5 secondi
-	        	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 	        	  // Stampa di test visiva su console SWV
 	        	  printf("[DEBUG 50Hz OK] Tempo trascorso: %lu s | LED commutato!\r\n", elapsed_seconds);
 	          }
 	      }
     /* USER CODE END WHILE */
-
+  }
     /* USER CODE BEGIN 3 */
 
   /* USER CODE END 3 */
