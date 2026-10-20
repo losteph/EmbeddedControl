@@ -108,7 +108,13 @@ int main(void)
     // Qui inseriremo l'init del sensore VL53L1X (I2C) e l'avvio del PWM ventola
 
     // Avvio del Timer 6 in modalità Interrupt (scatta ogni 20 ms = 50 Hz)
-    HAL_TIM_Base_Start_IT(&htim6);
+    //HAL_TIM_Base_Start_IT(&htim6);
+
+    // 1. Imposta un duty cycle di test (es. 50% con ARR = 4199 -> CCR = 2100)
+      __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 2100);
+
+      // 2. Avvia la generazione PWM hardware sul canale 1 (PA5)
+      HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
