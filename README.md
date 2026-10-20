@@ -26,13 +26,7 @@ La spinta verticale è modulata tramite una ventola a 12V pilotata in PWM, mentr
 
 ## Mappatura Pin Principali
 
-* `PA5`: Uscita PWM per il gate del MOSFET (TIM2_CH1)
-* `PB8`: Clock I2C per il sensore ToF (I2C1_SCL)
-* `PB9`: Dati I2C per il sensore ToF (I2C1_SDA)
-* `PC0`: Pulsante incremento quota (EXTI0)
-* `PC1`: Pulsante decremento quota (EXTI1)
-* `PA6`: Pin diagnostico per la misura del tempo di calcolo su oscilloscopio
-* `3V3` e `GND`: Alimentazione logica del sensore e ritorno optoisolatore
+
 
 ---
 
