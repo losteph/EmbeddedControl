@@ -47,10 +47,6 @@ TIM_HandleTypeDef htim6;
 volatile uint8_t task_50hz = 0;   // Alzata a 1 ogni 20ms dall'interrupt di TIM6
 uint8_t print_flag = 0;           // Alzata a 1 ogni 10 cicli (200ms) per la telemetria
 uint16_t print_counter = 0;       // Contatore secondario per rallentare le stampe
-
-/*--- VARIABILI USILIARIE PER TEST --- */
-uint16_t timer_seconds_count = 0; // Contatore per scandire i 5 secondi
-uint32_t elapsed_seconds = 0;     // Tempo totale trascorso in secondi
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

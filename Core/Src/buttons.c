@@ -27,3 +27,4 @@ void Buttons_HandleEXTI(uint16_t GPIO_Pin, float *setpoint) {
         }
     }
 }
+
