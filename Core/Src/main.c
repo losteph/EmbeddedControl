@@ -115,46 +115,18 @@ int main(void)
 
     // Avvio del Timer 6 in modalità Interrupt (scatta ogni 20 ms = 50 Hz)
     HAL_TIM_Base_Start_IT(&htim6);
-    printf("--- Firmware Avviato: Timer a 50 Hz attivo ---\r\n"); //per test iniziale, poi cancelliamo.
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /* Controllo ad anello chiuso a 50 Hz */
-	  if (task_50hz == 1)
-	      {
-	          task_50hz = 0; // Reset immediato della flag
-
-	          Read_Sensors();
-	          Compute_PID();
-	          Update_Actuators();
-
-	          /*
-	          // Base dei tempi secondaria per le stampe (10 cicli * 20ms = 200ms -> 5 Hz)
-	          print_counter++;
-	          if (print_counter >= 250) // 10 cicli * 20ms = 200ms
-	          {
-	              print_counter = 0;
-	              print_flag = 1;
-	          }
-	          */
-	          // Calcolo dei 5 secondi: 250 cicli da 20 ms = 5000 ms
-	          timer_seconds_count++;
-	          if (timer_seconds_count >= 250)
-	          {
-	        	  timer_seconds_count = 0;
-	        	  elapsed_seconds += 5;
-
-	        	  // Stampa di test visiva su console SWV
-	        	  printf("[DEBUG 50Hz OK] Tempo trascorso: %lu s | LED commutato!\r\n", elapsed_seconds);
-	          }
-	      }
+	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  HAL_Delay(500);
     /* USER CODE END WHILE */
-  }
-    /* USER CODE BEGIN 3 */
 
+    /* USER CODE BEGIN 3 */
+  }
   /* USER CODE END 3 */
 }
 
@@ -250,6 +222,7 @@ static void MX_TIM6_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
@@ -259,6 +232,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
