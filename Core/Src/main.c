@@ -130,9 +130,6 @@ int main(void)
       sensor_id = VL53L1X_CheckID(&hi2c1);
       if (sensor_id == 0xEACC) {
           sensor_ok = VL53L1X_Init(&hi2c1);
-          if (sensor_ok) {
-              VL53L1X_SetROI(&hi2c1, 4, 4); // Area 4x4 SPAD, FoV ristretto a circa 15°
-          }
       }
   /* USER CODE END 2 */
 
@@ -144,7 +141,7 @@ int main(void)
 	  if (sensor_ok && VL53L1X_DataReady(&hi2c1)) {
 	          distance_mm = VL53L1X_GetDistanceMM(&hi2c1);
 	      }
-	      HAL_Delay(10);
+	      HAL_Delay(25);
 
 	  /* Controllo ad anello chiuso a 50 Hz */
 	  if (task_50hz == 1)
