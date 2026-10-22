@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "vl53l1x.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,6 +41,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+I2C_HandleTypeDef hi2c1;
+
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim6;
 
@@ -48,6 +51,10 @@ TIM_HandleTypeDef htim6;
 volatile uint8_t task_50hz = 0;   // Alzata a 1 ogni 20ms dall'interrupt di TIM6
 uint8_t print_flag = 0;           // Alzata a 1 ogni 10 cicli (200ms) per la telemetria
 uint16_t print_counter = 0;       // Contatore secondario per rallentare le stampe
+
+volatile uint16_t sensor_id = 0; //deve diventare 0xEACC (debug)
+volatile uint8_t  sensor_ok = 0; // deve diventare 1 (debug)
+volatile uint16_t distance_mm = 0; // i millimetri letti in tempo reale
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,6 +62,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 void Read_Sensors(void);
 void Compute_PID(void);
@@ -102,6 +110,7 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM6_Init();
   MX_TIM2_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   /* --- 1. INIZIALIZZAZIONE E AVVIO SERVIZI (Prima del while) --- */
 
@@ -115,12 +124,28 @@ int main(void)
 
       // 2. Avvia la generazione PWM hardware sul canale 1 (PA5)
       HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+
+      HAL_Delay(50);
+      sensor_id = VL53L1X_CheckID(&hi2c1);
+      if (sensor_id == 0xEACC) {
+          sensor_ok = VL53L1X_Init(&hi2c1);
+          if (sensor_ok) {
+              VL53L1X_SetROI(&hi2c1, 4, 4); // Area 4x4 SPAD, FoV ristretto a circa 15°
+          }
+      }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+	  if (sensor_ok && VL53L1X_DataReady(&hi2c1)) {
+	          distance_mm = VL53L1X_GetDistanceMM(&hi2c1);
+	      }
+	      HAL_Delay(10);
+
 	  /* Controllo ad anello chiuso a 50 Hz */
 	  if (task_50hz == 1)
 	      {
@@ -183,6 +208,40 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
+
+  /* USER CODE BEGIN I2C1_Init 0 */
+
+  /* USER CODE END I2C1_Init 0 */
+
+  /* USER CODE BEGIN I2C1_Init 1 */
+
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 400000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
+
+  /* USER CODE END I2C1_Init 2 */
+
 }
 
 /**
@@ -254,7 +313,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 8399;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 199;
+  htim6.Init.Period = 249;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
