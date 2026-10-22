@@ -117,7 +117,7 @@ int main(void)
     // Qui inseriremo l'init del sensore VL53L1X (I2C) e l'avvio del PWM ventola
 
     // Avvio del Timer 6 in modalità Interrupt (scatta ogni 20 ms = 50 Hz)
-    //HAL_TIM_Base_Start_IT(&htim6);
+     HAL_TIM_Base_Start_IT(&htim6);
 
     // 1. Imposta un duty cycle di test (es. 50% con ARR = 4199 -> CCR = 2100)
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 2100);
@@ -126,7 +126,6 @@ int main(void)
       HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
 
-      HAL_Delay(50);
       sensor_id = VL53L1X_CheckID(&hi2c1);
       if (sensor_id == 0xEACC) {
           sensor_ok = VL53L1X_Init(&hi2c1);
@@ -138,11 +137,7 @@ int main(void)
   while (1)
   {
 
-	  if (sensor_ok && VL53L1X_DataReady(&hi2c1)) {
-	          distance_mm = VL53L1X_GetDistanceMM(&hi2c1);
-	          printf("VL53L1X ID: 0x%04X, Distanza: %d mm\r\n", sensor_id, distance_mm);
-	      }
-	      HAL_Delay(25);
+
 
 
 	  /* Controllo ad anello chiuso a 50 Hz */
@@ -312,7 +307,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 8399;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 249;
+  htim6.Init.Period = 265;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -358,7 +353,10 @@ static void MX_GPIO_Init(void)
 
 void Read_Sensors(void)
 {
-    // TODO: Qui leggeremo la distanza da VL53L1X via I2C (e eventuale potenziometro)
+	  if (sensor_ok && VL53L1X_DataReady(&hi2c1)) {
+		          distance_mm = VL53L1X_GetDistanceMM(&hi2c1);
+		          printf("VL53L1X ID: 0x%04X, Distanza: %d mm\r\n", sensor_id, distance_mm);
+		      }
 }
 
 void Compute_PID(void)
