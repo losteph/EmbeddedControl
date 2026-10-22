@@ -1,10 +1,3 @@
-/*
- * vl53l1x.c
- *
- *  Created on: 22 ott 2026
- *      Author: Steph
- */
-
 #include "vl53l1x.h"
 
 // Tabella di configurazione base validata ST (Short Distance Mode, 1.3 m max)
