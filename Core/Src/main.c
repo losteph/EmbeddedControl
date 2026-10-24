@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "vl53l1x.h"
+#include "pid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,6 +56,13 @@ uint16_t print_counter = 0;       // Contatore secondario per rallentare le stam
 volatile uint16_t sensor_id = 0; //deve diventare 0xEACC (debug)
 volatile uint8_t  sensor_ok = 0; // deve diventare 1 (debug)
 volatile uint16_t distance_mm = 0; // i millimetri letti in tempo reale
+
+PID_Controller fan_pid;
+// Setpoint regolabile a mano da tastiera tramite Live Expressions!
+volatile float setpoint_mm = 300.0f;
+
+volatile float duty_output = 0.0f;
+volatile uint32_t ccr_applied = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -120,7 +128,7 @@ int main(void)
      HAL_TIM_Base_Start_IT(&htim6);
 
     // 1. Imposta un duty cycle di test (es. 50% con ARR = 4199 -> CCR = 2100)
-      __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 2100);
+      __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
       // 2. Avvia la generazione PWM hardware sul canale 1 (PA5)
       HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
@@ -130,6 +138,14 @@ int main(void)
       if (sensor_id == 0xEACC) {
           sensor_ok = VL53L1X_Init(&hi2c1);
       }
+
+
+      // Inizializzazione del PID
+      // Ts = 0.0266f (37.5 Hz con ARR=265, PSC=8399)
+      // out_min = 0.000f (4.5% soglia di spunto ventola)
+      // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
+      // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
+      PID_Init(&fan_pid, 0.0008f, 0.0002f, 0.0001f, 0.0266f, 0.000f, 0.800f);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -361,7 +377,12 @@ void Read_Sensors(void)
 
 void Compute_PID(void)
 {
-    // TODO: Qui chiameremo PID_Update() per calcolare control_pwm
+			// Calcolo dell'azione di controllo PID
+	        duty_output = PID_Update(&fan_pid, (float)setpoint_mm, (float)distance_mm);
+
+	        // Attuazione sul PWM (TIM2 ARR = 419999 -> base 420000 passi)
+	        ccr_applied = (uint32_t)(duty_output * 420000.0f);
+	        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ccr_applied);
 }
 
 void Update_Actuators(void)
