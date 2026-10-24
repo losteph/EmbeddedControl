@@ -145,7 +145,7 @@ int main(void)
       // out_min = 0.000f (4.5% soglia di spunto ventola)
       // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
       // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
-      PID_Init(&fan_pid, 0.0008f, 0.0002f, 0.0001f, 0.0266f, 0.000f, 0.800f);
+      PID_Init(&fan_pid, 0.0030f, 0.0011f, 0.0002f, 0.0266f, 0.000f, 0.900f);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -275,7 +275,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4199;
+  htim2.Init.Period = 419999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
@@ -383,6 +383,7 @@ void Compute_PID(void)
 	        // Attuazione sul PWM (TIM2 ARR = 419999 -> base 420000 passi)
 	        ccr_applied = (uint32_t)(duty_output * 420000.0f);
 	        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ccr_applied);
+	        printf("Duty: %.3f | CCR: %lu\n", duty_output, ccr_applied);
 }
 
 void Update_Actuators(void)

@@ -18,7 +18,7 @@ void PID_Reset(PID_Controller *pid) {
 
 float PID_Update(PID_Controller *pid, float setpoint, float measurement) {
     // 1. Calcolo dell'errore di inseguimento e[k]
-    float error = setpoint - measurement;
+    float error =  measurement - setpoint;
 
     // 2. Azione Proporzionale
     float P = pid->Kp * error;
