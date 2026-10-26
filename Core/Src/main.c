@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define PRINT_PRESCALER 10
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -71,6 +71,7 @@ PID_Controller fan_pid;
 
 volatile float duty_output = 0.0f;
 volatile uint32_t ccr_applied = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,7 +136,6 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   /* --- INIZIALIZZAZIONE E AVVIO SERVIZI (Prima del while) --- */
-
     // Avvia l'acquisizione continua del potenziometro in DMA
   	   Potentiometer_Init(&hadc1);
 
@@ -158,6 +158,9 @@ int main(void)
       // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
       // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
       PID_Init(&fan_pid, 0.0016f, 0.0002f, 0.00055f, 0.0266f, 0.000f, 1.000f);
+
+      HAL_TIM_Base_Start_IT(&htim6);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -447,13 +450,17 @@ void Read_Sensors(void)
 {
 	// Aggiornamento del setpoint tramite modulo dedicato
 	setpoint_mm = Potentiometer_GetSetpoint(SETPOINT_MIN_MM, SETPOINT_MAX_MM);
+	printf("Setpoint: %.1f cm \n", (setpoint_mm + 15)/10);
 
 
 	if (sensor_ok && VL53L1X_DataReady(&hi2c1)) {
 		          distance_mm = VL53L1X_GetDistanceMM(&hi2c1);
-		          printf("VL53L1X ID: 0x%04X, Distanza: %d mm\r\n", sensor_id, distance_mm);
 		      }
+  //  printf("VL53L1X ID: 0x%04X, Distanza: %d mm\r\n", sensor_id, distance_mm);
+
 }
+
+
 
 void Compute_PID(void)
 {
@@ -463,7 +470,8 @@ void Compute_PID(void)
 	        // Attuazione sul PWM (TIM2 ARR = 419999 -> base 420000 passi)
 	        ccr_applied = (uint32_t)(duty_output * 420000.0f);
 	        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, ccr_applied);
-	        printf("Duty: %.3f | CCR: %lu\n", duty_output, ccr_applied);
+	      //  printf("Duty: %.3f | CCR: %lu\n", duty_output, ccr_applied);
+
 }
 
 /**
