@@ -145,7 +145,7 @@ int main(void)
       // out_min = 0.000f (4.5% soglia di spunto ventola)
       // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
       // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
-      PID_Init(&fan_pid, 0.0030f, 0.0011f, 0.0002f, 0.0266f, 0.000f, 0.900f);
+      PID_Init(&fan_pid, 0.0016f, 0.0002f, 0.00055f, 0.0266f, 0.000f, 1.000f);
   /* USER CODE END 2 */
 
   /* Infinite loop */
