@@ -55,11 +55,11 @@ TIM_HandleTypeDef htim6;
 /* --- FLAG DI SINCRONIZZAZIONE (volatile perché modificate/lette tra ISR e main) --- */
 
 // Limiti fisici del tubo per la pallina levitante (in mm)
-const float SETPOINT_MIN_MM = 18.0f;   // Posizione minima desiderata (fondo tubo)
-const float SETPOINT_MAX_MM = 50.0f;  // Posizione massima desiderata (cima tubo)
+const float SETPOINT_MIN_MM = 40.0f;   // Posizione minima desiderata (fondo tubo)
+const float SETPOINT_MAX_MM = 450.0f;  // Posizione massima desiderata (cima tubo)
 volatile float setpoint_mm = 50.0f;             // Setpoint effettivo usato dal PID
 
-volatile uint8_t task_50hz = 0;   // Alzata a 1 ogni 20ms dall'interrupt di TIM6
+volatile uint8_t loop_flag = 0;   // Alzata a 1 ogni 26ms dall'interrupt di TIM6
 uint8_t print_flag = 0;           // Alzata a 1 ogni 10 cicli (200ms) per la telemetria
 uint16_t print_counter = 0;       // Contatore secondario per rallentare le stampe
 
@@ -139,7 +139,7 @@ int main(void)
     // Avvia l'acquisizione continua del potenziometro in DMA
   	   Potentiometer_Init(&hadc1);
 
-    // 1. Imposta un duty cycle di test (es. 50% con ARR = 4199 -> CCR = 2100)
+    // 1. Imposta un duty cycle di test (es. 50% con ARR = 419999 -> CCR = 210000)
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 
       // 2. Avvia la generazione PWM hardware sul canale 1 (PA5)
@@ -154,12 +154,12 @@ int main(void)
 
       // Inizializzazione del PID
       // Ts = 0.0266f (37.5 Hz con ARR=265, PSC=8399)
-      // out_min = 0.000f (4.5% soglia di spunto ventola)
-      // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
-      // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
+      // out_min = 0.000f (0.0% soglia di spunto ventola)
+      // out_max = 0.900f (90.0% tetto massimo per non sparare la sfera fuori dal tubo)
+      // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0030f, Ki=0.0011f, Kd=0.0002f
       PID_Init(&fan_pid, 0.0030f, 0.0011f, 0.0002f, 0.0266f, 0.000f, 0.900f);
 
-      // Avvio del Timer 6 in modalità Interrupt (scatta ogni 20 ms = 50 Hz)
+      // Avvio del Timer 6 in modalità Interrupt (scatta ogni 26 ms = 37 Hz)
 	  HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
@@ -171,14 +171,13 @@ int main(void)
 
 
 
-	  /* Controllo ad anello chiuso a 50 Hz */
-	  if (task_50hz == 1)
+	  /* Controllo ad anello chiuso  */
+	  if (loop_flag == 1)
 	      {
-	          task_50hz = 0; // Reset immediato della flag
+	          loop_flag = 0; // Reset immediato della flag
 
 	          Read_Sensors();
 	          Compute_PID();
-	          Update_Actuators();
 
 	      }
     /* USER CODE END WHILE */
@@ -342,7 +341,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4199;
+  htim2.Init.Period = 419999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
@@ -390,7 +389,7 @@ static void MX_TIM6_Init(void)
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 8399;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 249;
+  htim6.Init.Period = 265;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -446,13 +445,10 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/* ============================================================================
- * 1. IMPLEMENTAZIONE DELLE FUNZIONI DELLO SCHELETRO (Per ora vuote/di test)
- * ============================================================================ */
 
 void Read_Sensors(void)
 {
-	// 1. Aggiornamento del setpoint tramite modulo dedicato
+	// Aggiornamento del setpoint tramite modulo dedicato
 	setpoint_mm = Potentiometer_GetSetpoint(SETPOINT_MIN_MM, SETPOINT_MAX_MM);
 
 
@@ -473,35 +469,19 @@ void Compute_PID(void)
 	        printf("Duty: %.3f | CCR: %lu\n", duty_output, ccr_applied);
 }
 
-void Update_Actuators(void)
-{
-    // TODO: Qui aggiorneremo il registro CCR del PWM ventola e i 2 LED (Verde/Rosso)
-}
-
-/* ============================================================================
- * 2. ROUTINE DI GESTIONE DEGLI INTERRUPT (ISR Callbacks - Brevissime!)
- * ============================================================================ */
-
 /**
-  * @brief  Callback del Timer a 50 Hz (scatta esattamente ogni 20 ms).
+  * @brief  Callback del Timer a 37 Hz (scatta esattamente ogni 26 ms).
   *
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM6)
     {
-        task_50hz = 1;
+        loop_flag = 1;
     }
 }
 
-/**
-  * @brief  Callback per gli Interrupt Esterni (Pulsanti fisici per il Setpoint).
-  *         Isola l'input utente asincrono dalla logica di controllo.
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    // TODO: Qui inseriremo l'incremento/decremento di setpoint_mm con debouncing
-}
+
 /* USER CODE END 4 */
 
 /**
