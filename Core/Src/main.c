@@ -56,7 +56,7 @@ TIM_HandleTypeDef htim6;
 // Limiti fisici del tubo per la pallina levitante (in mm)
 const float SETPOINT_MIN_MM = 40.0f;   // Posizione minima desiderata (fondo tubo)
 const float SETPOINT_MAX_MM = 450.0f;  // Posizione massima desiderata (cima tubo)
-volatile float setpoint_mm = 50.0f;             // Setpoint effettivo usato dal PID
+volatile float setpoint_mm = 50.0f;    // Setpoint effettivo usato dal PID
 
 volatile uint8_t loop_flag = 0;   // Alzata a 1 ogni 26ms dall'interrupt di TIM6
 uint8_t print_flag = 0;           // Alzata a 1 ogni 10 cicli (200ms) per la telemetria
@@ -153,9 +153,9 @@ int main(void)
 
       // Inizializzazione del PID
       // Ts = 0.0266f (37.5 Hz con ARR=265, PSC=8399)
-      // out_min = 0.000f (4.5% soglia di spunto ventola)
-      // out_max = 0.180f (18.0% tetto massimo per non sparare la sfera fuori dal tubo)
-      // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0008f, Ki=0.0002f, Kd=0.0001f
+      // out_min = 0.000f (0% soglia di spunto ventola)
+      // out_max = 1.000f (100% tetto massimo per non sparare la sfera fuori dal tubo)
+      // Guadagni iniziali indicativi da rifinire al banco: Kp=0.0016f, Ki=0.0002f, Kd=0.00055f
       PID_Init(&fan_pid, 0.0016f, 0.0002f, 0.00055f, 0.0266f, 0.000f, 1.000f);
 
       HAL_TIM_Base_Start_IT(&htim6);
