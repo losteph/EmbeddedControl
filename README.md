@@ -4,7 +4,7 @@ Il sistema realizza il controllo ad anello chiuso per stabilizzare e regolare la
 
 La spinta verticale è modulata tramite una ventola a 12V pilotata in PWM, mentre l'altezza reale viene acquisita da un sensore laser Time-of-Flight (VL53L1X) posizionato in cima alla colonna. La quota di riferimento (setpoint) può essere modificata manualmente tramite due pulsanti esterni.
 
-👉 **[Video Dimostrativo](./demo_video.mp4)**
+👉 [![**Video Dimostrativo**](https://img.youtube.com/vi/qP0BVGuWc28/hqdefault.jpg)](https://www.youtube.com/shorts/qP0BVGuWc28)
 
 ---
 
