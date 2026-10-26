@@ -35,5 +35,5 @@ La spinta verticale è modulata tramite una ventola a 12V pilotata in PWM, mentr
 
 ## Struttura del Repository
 
-* `Core/Src/` e `Core/Inc/`: Codice sorgente firmware (controllore `pid.c`, driver sensore `vl53l1x_user.c`, gestione pulsanti `buttons.c` e `main.c`).
-* `EmbeddedControl.ioc`: File di configurazione hardware per STM32CubeMX.
+- `Core/Src/` e `Core/Inc/`: Codice sorgente firmware (controllore PID, driver sensore, gestione ADC e main).
+- `EmbeddedControl.ioc`: File di configurazione hardware per STM32CubeMX.
