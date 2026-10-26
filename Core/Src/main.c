@@ -34,7 +34,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PRINT_PRESCALER 10
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
