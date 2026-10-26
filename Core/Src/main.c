@@ -34,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define PRINT_PRESCALER 10  // Stampa ogni 10 cicli da 20ms = 200ms (5 Hz)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
