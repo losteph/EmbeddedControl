@@ -8,8 +8,8 @@ La spinta verticale è modulata tramite una ventola a 12V pilotata in PWM, mentr
 
 ## Video Dimostrativo
 
-<video src="docs/demo_video.mp4" controls="controls" width="100%">
-  Il tuo browser non supporta il tag video. Puoi scaricare il file direttamente da [docs/demo_video.mp4](docs/demo_video.mp4).
+<video src="demo_video.mp4" controls="controls" width="100%">
+  Il tuo browser non supporta il tag video. Puoi scaricare il file direttamente da [demo_video.mp4](demo_video.mp4).
 </video>
 
 ---
